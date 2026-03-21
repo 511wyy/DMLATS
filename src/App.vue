@@ -1,26 +1,40 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div id="app">
+    <HeaderBar />
+    <div class="app-body">
+      <Sidebar />
+      <ChatView />
+    </div>
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import HeaderBar from './components/HeaderBar.vue'
+// import SideBar from './components/SideBar.vue'
+import ChatView from './components/ChatView.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    HeaderBar,
+    //SideBar,
+    ChatView
   }
 }
 </script>
 
 <style>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #0f1724 0%, #071226 100%);
+  color: #e6eef8;
+}
+.app-body {
+  display: flex;
+  flex: 1 1 auto;
+  padding: 24px;
+  gap: 20px;
 }
 </style>
