@@ -4,7 +4,9 @@ body,html,#app{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,
 button{cursor:pointer}
 
 /* Utility colors */
-::selection{background:#244b63;color:#fff}
+::selection{background:#cfe9ff;color:#0f1724}
+
+a{color:#0369a1}
 
 /* Small screen adjustments */
 @media (max-width:900px){
