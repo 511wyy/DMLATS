@@ -9,7 +9,7 @@
 </template>
 
 <script setup>
-import { newConversation } from '../services/store'
+import { newConversation } from '../../services/store'
 
 function createNew(){
   newConversation()

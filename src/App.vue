@@ -2,23 +2,18 @@
   <div id="app">
     <HeaderBar />
     <div class="app-body">
-      <SideBar />
-      <ChatView />
+      <router-view />
     </div>
   </div>
 </template>
 
 <script>
-import HeaderBar from './components/HeaderBar.vue'
-import SideBar from './components/SideBar.vue'
-import ChatView from './components/ChatView.vue'
+import HeaderBar from './components/user/HeaderBar.vue'
 
 export default {
   name: 'App',
   components: {
     HeaderBar,
-    SideBar,
-    ChatView
   }
 }
 </script>

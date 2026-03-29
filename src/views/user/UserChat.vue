@@ -1,4 +1,5 @@
 <template>
+  <SideBar />
   <main class="chat-view">
     <section class="messages" ref="msgList">
       <div class="meta">会话框</div>
@@ -8,7 +9,7 @@
 
     <section class="composer">
       <div class="input-row">
-        <textarea v-model="input" @keydown.enter.prevent="send" placeholder="向 AI 提问，按 Enter 发送"></textarea>
+        <textarea v-model="input" @keydown.enter.prevent="send" placeholder="按 Enter 发送"></textarea>
         <div class="controls">
           <button class="ghost" @click="clear">清除</button>
           <button class="primary" @click="send">发送</button>
@@ -20,9 +21,10 @@
 
 <script setup>
 import { ref, nextTick, computed, watch } from 'vue'
-import MessageBubble from './MessageBubble.vue'
-import mockApi from '../services/mockApi'
-import store, { pushMessage as storePush, newConversation } from '../services/store'
+import MessageBubble from '../../components/user/MessageBubble.vue'
+import SideBar from '@/components/user/SideBar.vue'
+import mockApi from '../../services/mockApi'
+import store, { pushMessage as storePush, newConversation } from '../../services/store'
 
 const messages = computed(() => {
   const conv = store.conversations.find(c => c.id === store.currentId)
@@ -55,8 +57,6 @@ async function send(){
 
 function clear(){ input.value = '' }
 
-// seed welcome (only add if empty)
-// ensure at least one conversation exists and seed welcome if empty
 if(!store.currentId){
   newConversation()
 }
@@ -64,7 +64,6 @@ if(messages.value.length === 0){
   pushLocal('assistant', '你好！请输入您需要优化的达梦SQL')
 }
 
-// clear input when switching conversations
 watch(() => store.currentId, () => { input.value = '' })
 </script>
 
