@@ -1,0 +1,80 @@
+<template>
+  <div class="login-root">
+    <div class="card admin">
+      <h2>管理员登录</h2>
+      <div class="field">
+        <label>管理员账号</label>
+        <input v-model="username" placeholder="请输入账号" />
+      </div>
+      <div class="field">
+        <label>密码</label>
+        <input type="password" v-model="password" placeholder="请输入密码" />
+      </div>
+      <div class="actions">
+        <button class="primary" :disabled="loading" @click="login">{{ loading ? '登录中...' : '登录' }}</button>
+        <router-link to="/login" class="link">用户登录</router-link>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import mockAuth from '../../services/mockAuth'
+
+const router = useRouter()
+const username = ref('')
+const password = ref('')
+const loading = ref(false)
+
+async function login(){
+  if(!username.value || !password.value){
+    alert('请输入账号和密码')
+    return
+  }
+  loading.value = true
+  try{
+    await mockAuth.loginAdmin(username.value, password.value)
+    router.push('/admin')
+  }catch(e){
+    alert(e.message || '登录失败')
+  }finally{
+    loading.value = false
+  }
+}
+</script>
+
+<style scoped>
+.login-root{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100%;
+    width: 100%;
+    padding:32px;
+    background:linear-gradient(180deg,#fff7f8 0%, #fbfbff 100%)
+}
+.card{
+    width:420px;
+    max-width:92vw;
+    padding:28px;
+    border-radius:14px;
+    background:rgba(255,255,255,0.98);
+    box-shadow:0 10px 30px rgba(2,6,23,0.08);
+    border:1px solid rgba(15,23,36,0.04);
+    transition:transform .18s ease,box-shadow .18s ease
+}
+.card.admin{border-color:rgba(59,130,246,0.12)}
+.card:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(2,6,23,0.12)}
+.card h2{margin:0 0 16px;color:#0f1724}
+.field{display:flex;flex-direction:column;margin:10px 0}
+.field label{font-size:13px;color:#475569;margin-bottom:8px}
+.field input{padding:12px;border-radius:10px;border:1px solid #e6eef6;background:#fbfdff;outline:none;transition:border-color .12s ease,box-shadow .12s ease}
+.field input:focus{border-color:#60a5fa;box-shadow:0 6px 18px rgba(59,130,246,0.08)}
+.actions{display:flex;align-items:center;gap:12px;margin-top:18px}
+.primary{flex:1;background:linear-gradient(90deg,#06b6d4,#3b82f6);color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}
+.primary:hover{filter:brightness(0.98)}
+.primary[disabled]{opacity:0.7;pointer-events:none}
+.link{color:#3b82f6;text-decoration:none;font-size:14px}
+</style>

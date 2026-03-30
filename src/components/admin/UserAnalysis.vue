@@ -1,6 +1,6 @@
 <template>
   <div class="user-analysis">
-    <h3>用户行为与提问可视化</h3>
+    <h3>用户行为与提问分析</h3>
     <div class="charts-grid">
       <div class="chart" ref="pieRef"></div>
       <div class="chart" ref="barRef"></div>
@@ -42,10 +42,6 @@ const activeUsers = [5,6,7,6,8,9,10]
 onMounted(async ()=>{
   let echarts = null
   try{ echarts = (await import('echarts')).default || await import('echarts') }catch(e){ echarts = null }
-  if(!echarts){
-    if(pieRef.value) pieRef.value.innerText = '未安装 echarts，图表不可用。运行 `npm install echarts` 可启用。'
-    return
-  }
 
   pieChart = echarts.init(pieRef.value)
   barChart = echarts.init(barRef.value)

@@ -19,6 +19,7 @@ function createNew(){
 <style scoped>
 .header-bar{
   height:64px;
+  min-height:64px;
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -27,6 +28,6 @@ function createNew(){
   border-bottom: 1px solid rgba(15,23,36,0.06);
 }
 .brand{font-weight:700;color:#0f1724}
-.right button{margin-left:12px;padding:8px 12px;border-radius:8px;border:1px solid rgba(15,23,36,0.06);background:transparent;color:#0f1724}
+.right button{margin-left:12px;padding:8px 12px;border-radius:8px;border:1px solid rgba(15,23,36,0.06);background:transparent;color:#0f1724;min-height:40px;line-height:1}
 .right .primary{background:linear-gradient(90deg,#06b6d4,#3b82f6);border:none;color:#fff}
 </style>
