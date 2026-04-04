@@ -25,7 +25,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import mockAuth from '../../api/loginAuth'
+import { ElMessage } from 'element-plus'
+import loginAuth from '../../api/loginAuth'
 
 const router = useRouter()
 const username = ref('')
@@ -35,20 +36,21 @@ const loading = ref(false)
 
 async function register(){
   if(!username.value || !password.value){
-    alert('请输入用户名和密码')
+    ElMessage.error('请输入用户名和密码')
     return
   }
   if(password.value !== confirm.value){
-    alert('两次输入的密码不一致')
+    ElMessage.error('两次输入的密码不一致')
     return
   }
   loading.value = true
   try{
-    await mockAuth.registerUser(username.value, password.value)
-    alert('注册成功，请登录')
-    router.push({ path: '/login', query: { username: username.value } })
+    const user = {username: username.value, password: password.value}
+    await loginAuth.registerUser(user)
+    ElMessage.success('注册成功，请登录')
+    router.push({ path: '/login'})
   }catch(e){
-    alert(e.message || '注册失败')
+    return
   }finally{
     loading.value = false
   }

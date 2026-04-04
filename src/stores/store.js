@@ -5,6 +5,9 @@ const store = reactive({
   currentId: null
 })
 
+// reactive user state for login status
+store.user = null
+
 // selected database for future use
 store.selectedDatabase = 'sample_db_a'
 
@@ -18,6 +21,14 @@ export function newConversation(title = '新对话'){
   store.conversations.unshift(conv)
   store.currentId = conv.id
   return conv
+}
+
+export function setUser(u){
+  store.user = u
+}
+
+export function clearUser(){
+  store.user = null
 }
 
 export function selectConversation(id){

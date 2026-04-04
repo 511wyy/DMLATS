@@ -39,7 +39,7 @@ async function login(){
     sessionStorage.clear()
     localStorage.clear()
     const loginForm = {username: username.value, password: password.value, role: "admin"}
-    await loginAuth.loginAdmin(loginForm)
+    await loginAuth.login(loginForm)
     router.push('/admin')
     ElMessage.success('登录成功！')
   }catch(e){
