@@ -23,8 +23,8 @@
 import { ref, nextTick, computed, watch } from 'vue'
 import MessageBubble from '../../components/user/MessageBubble.vue'
 import SideBar from '@/components/user/SideBar.vue'
-import mockApi from '../../services/mockApi'
-import store, { pushMessage as storePush, newConversation } from '../../services/store'
+import mockApi from '../../api/mockApi'
+import store, { pushMessage as storePush, newConversation } from '../../stores/store'
 
 const messages = computed(() => {
   const conv = store.conversations.find(c => c.id === store.currentId)

@@ -1,4 +1,6 @@
 // 简单的 mock 认证服务
+import { postRequest } from '../utils/api'
+
 export default {
   loginUser(username, password){
     return new Promise((resolve, reject) => {
@@ -9,17 +11,13 @@ export default {
       }, 600 + Math.random()*600)
     })
   },
-  loginAdmin(username, password){
-    return new Promise((resolve, reject) => {
-      setTimeout(()=>{
-        if(!username || !password) return reject(new Error('账号或密码不能为空'))
-        // 示例：仅当账号为 admin 且密码为 admin 时通过
-        if(username === 'admin' && password === 'admin'){
-          resolve({ token: 'admin-token-simulated', username })
-        }else{
-          reject(new Error('无效的管理员凭证（示例：admin / admin）'))
+  loginAdmin(loginFormPost){
+    return postRequest('/login', loginFormPost).then(resp => {
+        if (resp) {
+          localStorage.setItem("user", JSON.stringify(resp.obj));
+          return resp;
         }
-      }, 600 + Math.random()*600)
+        return Promise.reject(new Error('登录失败'));
     })
   }
   ,

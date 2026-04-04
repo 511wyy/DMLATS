@@ -22,7 +22,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import mockAuth from '../../services/mockAuth'
+import { ElMessage } from 'element-plus'
+import loginAuth from '../../api/loginAuth'
 
 const router = useRouter()
 const username = ref('')
@@ -31,15 +32,19 @@ const loading = ref(false)
 
 async function login(){
   if(!username.value || !password.value){
-    alert('请输入用户名和密码')
+    ElMessage.error('请输入账号和密码')
     return
   }
   loading.value = true
   try{
-    await mockAuth.loginUser(username.value, password.value)
+    sessionStorage.clear()
+    localStorage.clear()
+    const loginForm = {username: username.value, password: password.value, role: "user"}
+    await loginAuth.loginAdmin(loginForm)
     router.push('/user')
+    ElMessage.success('登录成功！')
   }catch(e){
-    alert(e.message || '登录失败')
+    return
   }finally{
     loading.value = false
   }

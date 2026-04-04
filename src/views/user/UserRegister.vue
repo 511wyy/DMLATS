@@ -25,7 +25,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import mockAuth from '../../services/mockAuth'
+import mockAuth from '../../api/loginAuth'
 
 const router = useRouter()
 const username = ref('')

@@ -26,7 +26,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import store, { selectConversation, newConversation, setSelectedDatabase } from '../../services/store'
+import store, { selectConversation, newConversation, setSelectedDatabase } from '../../stores/store'
 
 const conversations = computed(() => store.conversations)
 
