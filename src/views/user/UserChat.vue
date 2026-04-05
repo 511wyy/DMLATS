@@ -1,36 +1,38 @@
 <template>
-  <SideBar />
-  <main class="chat-view">
-    <section class="messages" ref="msgList">
-      <div class="meta">LATS SQL 优化会话</div>
+  <div class="chat-page">
+    <SideBar />
+    <main class="chat-view">
+      <section class="messages" ref="msgList">
+        <div class="meta">LATS SQL 优化会话</div>
 
-      <MessageBubble
-        v-for="m in messages"
-        :key="m.id"
-        :message="m"
-      />
+        <MessageBubble
+          v-for="m in messages"
+          :key="m.id"
+          :message="m"
+        />
 
-      <div v-if="typing" class="typing">正在分析 SQL，请稍候…</div>
-    </section>
+        <div v-if="typing" class="typing">正在分析 SQL，请稍候…</div>
+      </section>
 
-    <section class="composer">
-      <div class="input-row">
-        <textarea
-          v-model="input"
-          :disabled="typing"
-          @keydown="handleKeydown"
-          placeholder="请输入需要优化的达梦 SQL，Enter 发送，Shift+Enter 换行"
-        ></textarea>
+      <section class="composer">
+        <div class="input-row">
+          <textarea
+            v-model="input"
+            :disabled="typing"
+            @keydown="handleKeydown"
+            placeholder="请输入需要优化的达梦 SQL，Enter 发送，Shift+Enter 换行"
+          ></textarea>
 
-        <div class="controls">
-          <button class="ghost" :disabled="typing" @click="clear">清除</button>
-          <button class="primary" :disabled="typing || !canSend" @click="send">
-            {{ typing ? '分析中...' : '发送' }}
-          </button>
+          <div class="controls">
+            <button class="ghost" :disabled="typing" @click="clear">清除</button>
+            <button class="primary" :disabled="typing || !canSend" @click="send">
+              {{ typing ? '分析中...' : '发送' }}
+            </button>
+          </div>
         </div>
-      </div>
-    </section>
-  </main>
+      </section>
+    </main>
+  </div>
 </template>
 
 <script setup>
@@ -59,8 +61,13 @@ function scrollToBottom() {
   })
 }
 
-function pushLocal(role, text) {
+function pushText(role, text) {
   storePush(role, text)
+  scrollToBottom()
+}
+
+function pushStructured(role, payload) {
+  storePush(role, payload)
   scrollToBottom()
 }
 
@@ -71,7 +78,7 @@ function ensureConversationInit() {
 
   const conv = store.conversations.find(c => c.id === store.currentId)
   if (conv && conv.messages.length === 0) {
-    pushLocal(
+    pushText(
       'assistant',
       '你好，我是 LATS SQL 优化助手。请输入需要优化的达梦 SQL，我会返回优化后的 SQL、索引建议、风险点和优化建议。'
     )
@@ -89,15 +96,20 @@ async function send() {
   const txt = input.value.trim()
   if (!txt || typing.value) return
 
-  pushLocal('user', txt)
+  pushText('user', txt)
   input.value = ''
   typing.value = true
 
   try {
     const reply = await mockApi.sendMessage(txt)
-    pushLocal('assistant', reply)
+
+    pushStructured('assistant', {
+      type: 'lats_result',
+      title: 'SQL 优化结果',
+      data: reply
+    })
   } catch (e) {
-    pushLocal('assistant', `⚠️ 接口调用失败：${e.message || e}`)
+    pushText('assistant', `⚠️ 接口调用失败：${e.message || e}`)
   } finally {
     typing.value = false
     scrollToBottom()
@@ -134,6 +146,16 @@ watch(
 </script>
 
 <style scoped>
+.chat-page{
+  display:flex;
+  gap:16px;
+  height:87vh;
+  width: 100%;
+  padding:16px;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+
 .chat-view{
   flex:1;
   display:flex;
@@ -142,12 +164,15 @@ watch(
   padding:16px;
   border-radius:12px;
   min-height:0;
+  overflow:hidden;
 }
 
 .messages{
   flex:1;
-  overflow:auto;
+  overflow-y:auto;
+  overflow-x:hidden;
   padding:12px 8px;
+  min-height:0;
 }
 
 .meta{
@@ -164,6 +189,7 @@ watch(
 
 .composer{
   margin-top:12px;
+  flex-shrink:0;
 }
 
 .input-row{
