@@ -35,7 +35,7 @@ function logout(){
     type: 'warning'
   }).then(() => {
     const currentRole = role.value
-    try{ localStorage.clear() }catch(e){ console.warn('localStorage.clear failed', e) }
+    try{ localStorage.removeItem('user') }catch(e){ console.warn('removeItem user failed', e) }
     try{ clearUser() }catch(e){ /* ignore */ }
     if(currentRole === 'admin'){
       router.push('/admin/login')

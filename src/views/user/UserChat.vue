@@ -1,15 +1,30 @@
 <template>
   <div class="chat-page">
     <SideBar />
+
     <main class="chat-view">
       <section class="messages" ref="msgList">
-        <div class="meta">LATS SQL 优化会话</div>
+        <div class="meta">
+          LATS SQL 优化会话
+          <span v-if="currentConversation?.title" class="meta-title">
+            / {{ currentConversation.title }}
+          </span>
+        </div>
 
-        <MessageBubble
-          v-for="m in messages"
-          :key="m.id"
-          :message="m"
-        />
+        <template v-if="messages.length > 0">
+          <MessageBubble
+            v-for="m in messages"
+            :key="m.id"
+            :message="normalizeMessage(m)"
+          />
+        </template>
+
+        <div v-else class="welcome-card">
+          <div class="welcome-title">你好，我是 LATS SQL 优化助手</div>
+          <div class="welcome-text">
+            请输入需要优化的达梦 SQL，我会返回优化后的 SQL、索引建议、风险点和优化建议。
+          </div>
+        </div>
 
         <div v-if="typing" class="typing">正在分析 SQL，请稍候…</div>
       </section>
@@ -39,16 +54,29 @@
 import { ref, nextTick, computed, watch, onMounted } from 'vue'
 import MessageBubble from '../../components/user/MessageBubble.vue'
 import SideBar from '@/components/user/SideBar.vue'
-import mockApi from '../../api/mockApi'
-import store, { pushMessage as storePush, newConversation } from '../../stores/store'
+
+import store, {
+  selectConversation,
+  setConversations
+} from '../../stores/store'
+
+import {
+  createConversationApi,
+  listConversationsApi,
+  getConversationDetailApi,
+  optimizeSqlApi
+} from '../../api/conversation'
 
 const input = ref('')
 const typing = ref(false)
 const msgList = ref(null)
 
+const currentConversation = computed(() => store.currentConversation)
+
 const messages = computed(() => {
-  const conv = store.conversations.find(c => c.id === store.currentId)
-  return conv ? conv.messages : []
+  return Array.isArray(store.currentConversation?.messages)
+    ? store.currentConversation.messages
+    : []
 })
 
 const canSend = computed(() => !!input.value.trim())
@@ -61,27 +89,55 @@ function scrollToBottom() {
   })
 }
 
-function pushText(role, text) {
-  storePush(role, text)
-  scrollToBottom()
-}
+/**
+ * 兼容 MessageBubble 旧结构
+ * 你的后端消息结构是：
+ * {
+ *   id, role, type, textContent, originalSql, optimizedSql, analysis, ...
+ * }
+ *
+ * 如果 MessageBubble 还是按旧结构：
+ * - 文本消息：message.text
+ * - 结构化消息：message.data
+ * 那这里做一次适配即可
+ */
+function normalizeMessage(m) {
+  if (!m) return m
 
-function pushStructured(role, payload) {
-  storePush(role, payload)
-  scrollToBottom()
-}
-
-function ensureConversationInit() {
-  if (!store.currentId) {
-    newConversation()
+  if (m.type === 'lats_result') {
+    return {
+      ...m,
+      title: 'SQL 优化结果',
+      data: {
+        originalSql: m.originalSql,
+        optimizedSql: m.optimizedSql,
+        analysis: tryParseJson(m.analysis),
+        indexStrategies: tryParseJson(m.indexStrategies),
+        executionTimes: tryParseJson(m.executionTimes),
+        iterations: m.iterations,
+        totalNodes: m.totalNodes,
+        originalTimeMs: m.originalTimeMs,
+        optimizedTimeMs: m.optimizedTimeMs,
+        improvementRatio: m.improvementRatio,
+        code: m.code,
+        message: m.message
+      },
+      text: m.textContent || ''
+    }
   }
 
-  const conv = store.conversations.find(c => c.id === store.currentId)
-  if (conv && conv.messages.length === 0) {
-    pushText(
-      'assistant',
-      '你好，我是 LATS SQL 优化助手。请输入需要优化的达梦 SQL，我会返回优化后的 SQL、索引建议、风险点和优化建议。'
-    )
+  return {
+    ...m,
+    text: m.textContent || m.text || ''
+  }
+}
+
+function tryParseJson(value) {
+  if (!value || typeof value !== 'string') return value
+  try {
+    return JSON.parse(value)
+  } catch (e) {
+    return value
   }
 }
 
@@ -92,24 +148,68 @@ function handleKeydown(e) {
   }
 }
 
+async function ensureConversationReadyForSend(firstText) {
+  if (store.currentConversation?.id) {
+    return store.currentConversation.id
+  }
+
+  const createRes = await createConversationApi(firstText || '')
+  const conversationId = createRes.data.id
+
+  const detailRes = await getConversationDetailApi(conversationId)
+  selectConversation(detailRes.data)
+
+  const listRes = await listConversationsApi()
+  setConversations(listRes.data || [])
+
+  return conversationId
+}
+
+async function refreshConversationAndList(conversationId) {
+  if (!conversationId) return
+
+  const detailRes = await getConversationDetailApi(conversationId)
+  selectConversation(detailRes.data)
+
+  const listRes = await listConversationsApi()
+  setConversations(listRes.data || [])
+
+  scrollToBottom()
+}
+
 async function send() {
   const txt = input.value.trim()
   if (!txt || typing.value) return
 
-  pushText('user', txt)
-  input.value = ''
   typing.value = true
 
   try {
-    const reply = await mockApi.sendMessage(txt)
+    const conversationId = await ensureConversationReadyForSend(txt)
 
-    pushStructured('assistant', {
-      type: 'lats_result',
-      title: 'SQL 优化结果',
-      data: reply
-    })
+    input.value = ''
+
+    const optimizeRes = await optimizeSqlApi(conversationId, txt)
+    const newConversationId = optimizeRes.data?.conversationId || conversationId
+
+    await refreshConversationAndList(newConversationId)
   } catch (e) {
-    pushText('assistant', `⚠️ 接口调用失败：${e.message || e}`)
+    console.error(e)
+
+    // 如果当前已有会话，尽量把失败消息也显示出来
+    if (store.currentConversation?.id) {
+      const failedMessage = {
+        id: Date.now() + Math.random(),
+        role: 'assistant',
+        type: 'text',
+        textContent: `⚠️ 接口调用失败：${e?.message || '未知错误'}`
+      }
+
+      const current = store.currentConversation
+      if (!Array.isArray(current.messages)) {
+        current.messages = []
+      }
+      current.messages.push(failedMessage)
+    }
   } finally {
     typing.value = false
     scrollToBottom()
@@ -121,17 +221,15 @@ function clear() {
   input.value = ''
 }
 
-onMounted(() => {
-  ensureConversationInit()
+onMounted(async () => {
   scrollToBottom()
 })
 
 watch(
-  () => store.currentId,
+  () => store.currentConversation?.id,
   () => {
     input.value = ''
     nextTick(() => {
-      ensureConversationInit()
       scrollToBottom()
     })
   }
@@ -150,7 +248,7 @@ watch(
   display:flex;
   gap:16px;
   height:87vh;
-  width: 100%;
+  width:100%;
   padding:16px;
   box-sizing:border-box;
   overflow:hidden;
@@ -179,6 +277,32 @@ watch(
   font-size:12px;
   color:#475569;
   margin-bottom:8px;
+}
+
+.meta-title{
+  color:#0f1724;
+  font-weight:600;
+}
+
+.welcome-card{
+  margin-top:8px;
+  padding:16px;
+  border-radius:12px;
+  background:#f8fafc;
+  border:1px solid rgba(15,23,36,0.06);
+}
+
+.welcome-title{
+  font-size:16px;
+  font-weight:600;
+  color:#0f1724;
+  margin-bottom:8px;
+}
+
+.welcome-text{
+  font-size:14px;
+  color:#475569;
+  line-height:1.7;
 }
 
 .typing{
